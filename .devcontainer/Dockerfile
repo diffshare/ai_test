@@ -1,1 +1,12 @@
-FROM mcr.microsoft.com/devcontainers/typescript-node:0-18
+# alpine
+FROM node:18-alpine
+RUN apk update
+
+# for deasync
+RUN apk add make g++
+
+# git
+RUN apk add git
+RUN git config --global --add safe.directory "*"
+
+USER node
