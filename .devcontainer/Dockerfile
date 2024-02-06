@@ -9,4 +9,7 @@ RUN apk add make g++
 RUN apk add git
 RUN git config --global --add safe.directory "*"
 
+# ssh
+RUN apk add openssh
+
 USER node
