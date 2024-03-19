@@ -4,6 +4,7 @@ import styles from "./page.module.css";
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
+// import Anthropic from "@anthropic-ai/sdk";
 
 if (process.env.NEXT_PUBLIC_GEMINI_API_KEY === undefined) {
   throw new Error("GEMINI_API_KEY is not defined");
@@ -27,6 +28,11 @@ if (process.env.NEXT_PUBLIC_AZURE_ENDPOINT3 === undefined || process.env.NEXT_PU
 }
 const client3 = new OpenAIClient(process.env.NEXT_PUBLIC_AZURE_ENDPOINT3, new AzureKeyCredential(process.env.NEXT_PUBLIC_AZURE_KEY3));
 
+// const anthropic = new Anthropic({
+//   apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
+//   baseURL: "/api/"
+// });
+
 export default function Home() {
 
   const [prompt, setPrompt] = useState<string>("あなたは誰ですか？");
@@ -34,12 +40,14 @@ export default function Home() {
   const [gpt4TurboResult, setGpt4TurboResult] = useState<string>("");
   const [gpt4Result, setGpt4Result] = useState<string>("");
   const [gpt35Result, setGpt35Result] = useState<string>("");
+  const [claude3OpusResult, setClaude3OpusResult] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
-  const [enableGemini, setEnableGemini] = useState<boolean>(true);
-  const [enableGpt4Turbo, setEnableGpt4Turbo] = useState<boolean>(true);
+  const [enableGemini, setEnableGemini] = useState<boolean>(false);
+  const [enableGpt4Turbo, setEnableGpt4Turbo] = useState<boolean>(false);
   const [enableGpt4, setEnableGpt4] = useState<boolean>(false);
   const [enableGpt35, setEnableGpt35] = useState<boolean>(false);
+  const [enableClaude3Opus, setEnableClaude3Opus] = useState<boolean>(true);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -119,12 +127,34 @@ export default function Home() {
     }
   }
 
+  const generateClaude3Opus = async () => {
+    setClaude3OpusResult("");
+    const response = fetch("/api/anthropic", {
+      method: 'POST',
+      body: JSON.stringify({
+          model: "claude-3-opus-20240229",
+          max_tokens: 1024,
+          messages: [{role: "user", content: prompt}]
+        })
+    });
+    const reader = (await response).body?.getReader();
+    let text = "";
+    if (reader)
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        text += new TextDecoder("utf-8").decode(value);
+        setClaude3OpusResult(text);
+    }
+  };
+
   const generate = async () => {
     const llms = [];
     llms.push(enableGemini ? generateGemini() : Promise.resolve());
     llms.push(enableGpt4Turbo ? generateGpt4Turbo() : Promise.resolve());
     llms.push(enableGpt4 ? generateGpt4() : Promise.resolve());
     llms.push(enableGpt35 ? generateGpt35() : Promise.resolve());
+    llms.push(enableClaude3Opus ? generateClaude3Opus() : Promise.resolve());
     try {
       setProcessing(true);
       await Promise.all(llms);
@@ -156,6 +186,10 @@ export default function Home() {
             <input type="checkbox" checked={enableGpt35} onChange={(e) => setEnableGpt35(e.target.checked)}/>
             GPT-3.5
           </label>
+          <label>
+            <input type="checkbox" checked={enableClaude3Opus} onChange={(e) => setEnableClaude3Opus(e.target.checked)}/>
+            Claude-3 Opus
+          </label>
         </div>
         <div className={styles.chats}>
           {enableGemini && (
@@ -180,6 +214,12 @@ export default function Home() {
             <div className={styles.chat}>
             <div>GPT-3.5 Turbo:</div>
               <ReactMarkdown>{gpt35Result}</ReactMarkdown>
+            </div>
+          )}
+          {enableClaude3Opus && (
+            <div className={styles.chat}>
+            <div>Claude-3 Opus:</div>
+              <ReactMarkdown>{claude3OpusResult}</ReactMarkdown>
             </div>
           )}
         </div>
