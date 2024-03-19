@@ -250,7 +250,7 @@ export default function Home() {
         <div className={styles.chats}>
           {enableGemini && (
             <div className={styles.chat}>
-              <div>Gemini Pro:</div>
+              <div>Gemini 1.0 Pro:</div>
               <ReactMarkdown>{geminiResult}</ReactMarkdown>
             </div>
           )}
