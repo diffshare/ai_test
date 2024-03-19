@@ -7,8 +7,13 @@ const anthropic = new Anthropic({
 });
   
 export async function POST(request: NextRequest) {
-    const json = await request.json();
-    const response = anthropic.messages.stream(json)
-    const stream = AnthropicStream(response);
-    return new StreamingTextResponse(stream);
+    try {
+        const json = await request.json();
+        const response = anthropic.messages.stream(json)
+        const stream = AnthropicStream(response);
+        return new StreamingTextResponse(stream);
+    } catch (error: any) {
+        console.error(error);
+        return new Response(error.message, { status: 500 });
+    }
 }
