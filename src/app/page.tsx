@@ -41,13 +41,17 @@ export default function Home() {
   const [gpt4Result, setGpt4Result] = useState<string>("");
   const [gpt35Result, setGpt35Result] = useState<string>("");
   const [claude3OpusResult, setClaude3OpusResult] = useState<string>("");
+  const [claude3SonnetResult, setClaude3SonnetResult] = useState<string>("");
+  const [claude3HaikuResult, setClaude3HaikuResult] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
-  const [enableGemini, setEnableGemini] = useState<boolean>(false);
-  const [enableGpt4Turbo, setEnableGpt4Turbo] = useState<boolean>(false);
+  const [enableGemini, setEnableGemini] = useState<boolean>(true);
+  const [enableGpt4Turbo, setEnableGpt4Turbo] = useState<boolean>(true);
   const [enableGpt4, setEnableGpt4] = useState<boolean>(false);
   const [enableGpt35, setEnableGpt35] = useState<boolean>(false);
   const [enableClaude3Opus, setEnableClaude3Opus] = useState<boolean>(true);
+  const [enableClaude3Sonnet, setEnableClaude3Sonnet] = useState<boolean>(false);
+  const [enableClaude3Haiku, setEnableClaude3Haiku] = useState<boolean>(false);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -148,6 +152,48 @@ export default function Home() {
     }
   };
 
+  const generateClaude3Sonnet = async () => {
+    setClaude3SonnetResult("");
+    const response = fetch("/api/anthropic", {
+      method: 'POST',
+      body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1024,
+          messages: [{role: "user", content: prompt}]
+        })
+    });
+    const reader = (await response).body?.getReader();
+    let text = "";
+    if (reader)
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        text += new TextDecoder("utf-8").decode(value);
+        setClaude3SonnetResult(text);
+    }
+  }
+
+  const generateClaude3Haiku = async () => {
+    setClaude3HaikuResult("");
+    const response = fetch("/api/anthropic", {
+      method: 'POST',
+      body: JSON.stringify({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 1024,
+          messages: [{role: "user", content: prompt}]
+        })
+    });
+    const reader = (await response).body?.getReader();
+    let text = "";
+    if (reader)
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        text += new TextDecoder("utf-8").decode(value);
+        setClaude3HaikuResult(text);
+      }
+  }
+
   const generate = async () => {
     const llms = [];
     llms.push(enableGemini ? generateGemini() : Promise.resolve());
@@ -155,6 +201,8 @@ export default function Home() {
     llms.push(enableGpt4 ? generateGpt4() : Promise.resolve());
     llms.push(enableGpt35 ? generateGpt35() : Promise.resolve());
     llms.push(enableClaude3Opus ? generateClaude3Opus() : Promise.resolve());
+    llms.push(enableClaude3Sonnet ? generateClaude3Sonnet() : Promise.resolve());
+    llms.push(enableClaude3Haiku ? generateClaude3Haiku() : Promise.resolve());
     try {
       setProcessing(true);
       await Promise.all(llms);
@@ -190,6 +238,14 @@ export default function Home() {
             <input type="checkbox" checked={enableClaude3Opus} onChange={(e) => setEnableClaude3Opus(e.target.checked)}/>
             Claude-3 Opus
           </label>
+          <label>
+            <input type="checkbox" checked={enableClaude3Sonnet} onChange={(e) => setEnableClaude3Sonnet(e.target.checked)}/>
+            Claude-3 Sonnet
+          </label>
+          <label>
+            <input type="checkbox" checked={enableClaude3Haiku} onChange={(e) => setEnableClaude3Haiku(e.target.checked)}/>
+            Claude-3 Haiku
+          </label>
         </div>
         <div className={styles.chats}>
           {enableGemini && (
@@ -220,6 +276,18 @@ export default function Home() {
             <div className={styles.chat}>
             <div>Claude-3 Opus:</div>
               <ReactMarkdown>{claude3OpusResult}</ReactMarkdown>
+            </div>
+          )}
+          {enableClaude3Sonnet && (
+            <div className={styles.chat}>
+            <div>Claude-3 Sonnet:</div>
+              <ReactMarkdown>{claude3SonnetResult}</ReactMarkdown>
+            </div>
+          )}
+          {enableClaude3Haiku && (
+            <div className={styles.chat}>
+            <div>Claude-3 Haiku:</div>
+              <ReactMarkdown>{claude3HaikuResult}</ReactMarkdown>
             </div>
           )}
         </div>
