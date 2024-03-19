@@ -4,6 +4,9 @@ import { NextRequest } from "next/server";
   
 export async function POST(request: NextRequest) {
     try {
+        if (process.env.ANTHROPIC_API_KEY === undefined) {
+            throw new Error("Missing ANTHROPIC_API_KEY environment variable");
+        }
         const anthropic = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY
         });        
